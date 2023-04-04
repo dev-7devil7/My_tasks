@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  
+  ProcessFilm:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: default
+      EventPattern:
+        source:
+          - film-info
+      Name: film_info
+      State: ENABLED
+      Targets: 
+       - Arn: !GetAtt WriteToSQS.Arn
+         Id: WriteToSQS
+
+  WriteToSQSPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt WriteToSQS.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ProcessFilm.Arn
+
+
+  StarWarsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+
+  WriteToSQS:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: bridge_lambda
+      Handler: bridge_lambda.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt StarWarsRole.Arn
+      Code:
+        S3Bucket: student-post-data
+        S3Key:  bridge_lambda.zip
+      Timeout: 600
+
+  GetSQSData:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: process_lambda
+      Handler: process_lambda.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt StarWarsRole.Arn
+      Code:
+        S3Bucket: student-post-data
+        S3Key: process_lambda.zip
+      Timeout: 30
+
+  EventMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt StarWarsQueue.Arn
+      FunctionName: !GetAtt GetSQSData.Arn
+
+  StarWarsQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: StarWarsQueue
+      DelaySeconds: 0
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt InvalidQueue.Arn
+        maxReceiveCount: 3
+
+  ValidQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: ValidQueue
+      DelaySeconds: 0
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt InvalidQueue.Arn
+        maxReceiveCount: 3
+
+  InvalidQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: "InvalidQueue"
+      VisibilityTimeout: 30

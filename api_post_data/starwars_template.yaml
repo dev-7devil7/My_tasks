@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  StudentAPI:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: studentAPI
+      ProtocolType: HTTP
+
+  WriteToSQS:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: write_Sdata_to_sqs
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt StudentRole.Arn
+      Code:
+        S3Bucket: student-post-data
+        S3Key: student_detail_api.zip
+      Timeout: 600
+
+  InvokePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WriteToSQS
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${StudentAPI}/*/*"
+
+  StudentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+
+  APIIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref StudentAPI
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt WriteToSQS.Arn
+      PayloadFormatVersion: '2.0'
+
+  APIRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref StudentAPI
+      RouteKey: 'POST /write_Sdata_to_sqs'
+      Target: !Sub "integrations/${APIIntegration}"
+
+  APIDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - APIRoute
+    Properties:
+      ApiId: !Ref StudentAPI
+
+  APIStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref StudentAPI
+      StageName: prod
+      DeploymentId: !Ref APIDeployment
+
+  TestRead:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: read_sqs
+      Handler: read_sqs.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt StudentRole.Arn
+      Code:
+        S3Bucket: student-post-data
+        S3Key: read_sqs.zip
+      Timeout: 30
+
+  EventMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      Enabled: true
+      EventSourceArn: !GetAtt StarWarsQueue.Arn
+      FunctionName: !GetAtt TestRead.Arn
+
+  StarWarsQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: StarWarsQueue
+      DelaySeconds: 0
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt InvalidQueue.Arn
+        maxReceiveCount: 3
+
+  ValidQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: ValidQueue
+      DelaySeconds: 0
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt InvalidQueue.Arn
+        maxReceiveCount: 3
+
+  InvalidQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: "InvalidQueue"
+      VisibilityTimeout: 30

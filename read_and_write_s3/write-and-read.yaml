@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  StarWarsBucket:
+    Type: String
+    Default: star-wars-buckets
+
+Resources:
+
+
+  MyBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref StarWarsBucket
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: "s3:ObjectCreated:*"
+          Function: !GetAtt ReadFromS3Function.Arn
+
+  InvokePermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ReadFromS3Function
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub arn:aws:s3:::${StarWarsBucket}
+
+  AccessS3:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "Access_S3_Policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:AbortMultipartUpload'
+                  - 's3:CreateBucket'
+                  - 's3:ListBucket'
+                  - 's3:DeleteObject'
+                  - 's3:DeleteBucket'
+                  - 's3:GetObjectVersion'
+                  - 's3:ListMultipartUploadParts'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: "*"
+  
+
+  WriteToS3Function:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: write
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt AccessS3.Arn
+      Code:
+        S3Bucket: devendra-new-task
+        S3Key: write_to_s3.zip
+      Timeout: 900
+
+  ReadFromS3Function:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: read
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      Role: !GetAtt AccessS3.Arn
+      Code:
+        S3Bucket: devendra-new-task
+        S3Key: read_from_s3.zip
+      Timeout: 900
+
