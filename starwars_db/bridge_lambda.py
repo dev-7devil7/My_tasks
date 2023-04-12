@@ -1,25 +1,34 @@
 import json
 import boto3
+import logging
+
+# Creating a logger object
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
-def lambda_handler(event, content):
-    # creating an aws sqs clinet
+def lambda_handler(event, context):
+    # Creating an AWS SQS client
     sqs_client = boto3.client("sqs")
 
     sqs_url = "https://sqs.ap-northeast-1.amazonaws.com/232363089347/starwars_queue"
 
     post_data = json.dumps(event["detail"])
 
-    print(post_data)
+    # Logging the post data
+    logger.info(f"Received data: {post_data}")
 
     response = sqs_client.send_message(QueueUrl=sqs_url, MessageBody=post_data)
 
     response_code = response["ResponseMetadata"]["HTTPStatusCode"]
 
+    logger.info(response_code)
     if response_code == 200:
-        message = "Succesfully added to queue"
+        message = "Successfully added to queue"
     else:
-        message = "Error in addding data to SQS"
+        message = "Error in adding data to SQS"
+        # Logging the error message
+        logger.error(message)
 
     return {
         "StatusCode": response_code,

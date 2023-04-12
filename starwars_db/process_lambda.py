@@ -1,5 +1,9 @@
 import boto3
 import json
+import logging
+
+# Configure the root logger
+logging.basicConfig(level=logging.INFO)
 
 sqs_client = boto3.client("sqs")
 dynamodb = boto3.client("dynamodb")
@@ -35,16 +39,16 @@ def lambda_handler(event, context):
         ]
 
         if not all(check_requirements):
-            raise BaseException("Missing fileds in the given data")
+            error_message = "Missing fields in the given data"
+            logging.error(error_message)
+            raise BaseException(error_message)
 
         else:
-            print("Valid Data")
+            logging.info("Valid Data")
 
             # converting json data to dynamodb required format
             message = convert_data(message)
             response = dynamodb.put_item(TableName=table_name, Item=message)
 
     except Exception as error_message:
-        print("There are no messages available")
-
-    # return
+        logging.error(f"An error occurred: {error_message}")

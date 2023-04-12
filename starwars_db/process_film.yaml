@@ -27,13 +27,13 @@ Resources:
       Name: film_info
       State: ENABLED
       Targets: 
-       - Arn: !GetAtt WriteToSQS.Arn
-         Id: WriteToSQS
+       - Arn: !GetAtt BridgeLambdaFunction.Arn
+         Id: BridgeLambdaFunction
 
   WriteToSQSPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt WriteToSQS.Arn
+      FunctionName: !GetAtt BridgeLambdaFunction.Arn
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt ProcessFilm.Arn
@@ -55,7 +55,20 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonSQSFullAccess 
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
 
-  WriteToSQS:
+
+  PowerTools:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: powertools
+      Description: customs layer for powertools
+      Content:
+        S3Bucket: student-post-data
+        S3Key: powertools.zip
+      CompatibleRuntimes:
+        - python3.9
+
+
+  BridgeLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: bridge_lambda
@@ -66,8 +79,10 @@ Resources:
         S3Bucket: student-post-data
         S3Key:  bridge_lambda.zip
       Timeout: 600
+      Layers:
+        - !Ref PowerTools      
 
-  GetSQSData:
+  ProcessLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: process_lambda
@@ -78,6 +93,8 @@ Resources:
         S3Bucket: student-post-data
         S3Key: process_lambda.zip
       Timeout: 30
+      Layers:
+        - !Ref PowerTools
 
   EventMapping:
     Type: AWS::Lambda::EventSourceMapping
@@ -85,7 +102,7 @@ Resources:
       BatchSize: 10
       Enabled: true
       EventSourceArn: !GetAtt StarWarsQueue.Arn
-      FunctionName: !GetAtt GetSQSData.Arn
+      FunctionName: !GetAtt ProcessLambdaFunction.Arn
 
   StarWarsQueue:
     Type: "AWS::SQS::Queue"
