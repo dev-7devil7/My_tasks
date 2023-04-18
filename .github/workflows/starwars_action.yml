@@ -38,4 +38,4 @@ jobs:
 
     - name: Update CloudFormation stack
       run: |
-        aws cloudformation update-stack --stack-name starwars_db --template-body file://starwars_db/process_film.yaml
+        aws cloudformation update-stack --stack-name starwars-db --template-body file://starwars_db/process_film.yaml
