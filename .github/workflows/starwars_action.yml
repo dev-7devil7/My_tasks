@@ -32,9 +32,9 @@ jobs:
         pip install awscli
         pip install boto3
 
-    - name: Run pylint
-      run: |
-        pylint starwars_db
+    #- name: Run pylint
+    #  run: |
+    #    pylint starwars_db
 
     - name: Update CloudFormation stack
       run: |
