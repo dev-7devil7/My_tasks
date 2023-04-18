@@ -1,6 +1,6 @@
+import json
 import logging
 import boto3
-import json
 
 # Configure the root logger
 logging.basicConfig(level=logging.INFO)
