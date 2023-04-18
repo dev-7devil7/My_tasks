@@ -1,3 +1,4 @@
+"""Process lambda"""
 import json
 import logging
 import boto3
