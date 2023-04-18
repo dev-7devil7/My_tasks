@@ -8,7 +8,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def lambda_handler(event, context=None):
+def lambda_handler(event, context):
     """lambda function to add message to starwars_queue"""
     # Creating an AWS SQS client
     sqs_client = boto3.client("sqs")
