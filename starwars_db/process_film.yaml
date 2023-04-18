@@ -155,4 +155,4 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: QueueName
-          Value: !GetAtt InvalidDLQ.QueueName
+          Value: !GetAtt InvalidQueue.QueueName
