@@ -1,0 +1,40 @@
+name: Star Wars DB Actions
+
+on:
+  push:
+    paths:
+      - 'starwars_db/**'
+
+jobs:
+  pylint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.SECRET_KEY }}
+        aws-region: ${{ secrets.LOCATION }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+        pip install awscli
+
+    - name: Run pylint
+      run: |
+        pylint starwars_db
+
+    - name: Update CloudFormation stack
+      run: |
+        aws cloudformation update-stack --stack-name starwars_db --template-body file://starwars_db/process_film.yaml

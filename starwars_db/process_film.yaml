@@ -120,3 +120,37 @@ Resources:
     Properties:
       QueueName: "starwars_dlq"
       VisibilityTimeout: 30
+
+
+  StarwarsTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: "Star Wars DLQ Notification"
+      TopicName: "starwars_dlq_notification"
+
+  SnsSubscription:
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      Protocol: "email"
+      TopicArn: !Ref StarwarsTopic
+      Endpoint: "dev7.rasineni@gmail.com"
+
+  CloudWatchAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: "StarWars Alarm"
+      AlarmDescription: "Alarm when a new message is added to the Star Wars DLQ"
+      ActionsEnabled: true
+      OKActions:
+        - !Ref StarwarsTopic
+      AlarmActions:
+        - !Ref StarwarsTopic
+      InsufficientDataActions:
+        - !Ref StarwarsTopic
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: "AWS/SQS"
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
