@@ -3,6 +3,7 @@ import json
 import logging
 import boto3
 
+
 # Creating a logger object
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
