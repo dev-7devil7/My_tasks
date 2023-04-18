@@ -46,12 +46,11 @@ def lambda_handler(event, context):
             logging.error(error_message)
             raise BaseException(error_message)
 
-        else:
-            logging.info("Valid Data")
+        logging.info("Valid Data")
 
-            # converting json data to dynamodb required format
-            message = convert_data(message)
-            response = dynamodb.put_item(TableName=TABLE_NAME, Item=message)
+        # converting json data to dynamodb required format
+        message = convert_data(message)
+        response = dynamodb.put_item(TableName=TABLE_NAME, Item=message)
 
     except Exception as error_message:
         logging.error(f"An error occurred: {error_message}")
