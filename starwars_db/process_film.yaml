@@ -156,3 +156,4 @@ Resources:
       Dimensions:
         - Name: QueueName
           Value: !GetAtt InvalidQueue.QueueName
+          
