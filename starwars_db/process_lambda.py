@@ -3,7 +3,6 @@ import json
 import logging
 import boto3
 
-
 # Configure the root logger
 logging.basicConfig(level=logging.INFO)
 
