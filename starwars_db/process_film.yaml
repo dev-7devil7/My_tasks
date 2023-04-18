@@ -122,7 +122,7 @@ Resources:
       VisibilityTimeout: 30
 
 
-  StarwarsTopic:
+  StarwarsSNS:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: "Star Wars DLQ Notification"
@@ -132,7 +132,7 @@ Resources:
     Type: "AWS::SNS::Subscription"
     Properties:
       Protocol: "email"
-      TopicArn: !Ref StarwarsTopic
+      TopicArn: !Ref StarwarsSNS
       Endpoint: "dev7.rasineni@gmail.com"
 
   CloudWatchAlarm:
@@ -141,11 +141,11 @@ Resources:
       AlarmName: "StarWars Alarm"
       ActionsEnabled: true
       OKActions:
-        - !Ref StarwarsTopic
+        - !Ref StarwarsSNS
       AlarmActions:
-        - !Ref StarwarsTopic
+        - !Ref StarwarsSNS
       InsufficientDataActions:
-        - !Ref StarwarsTopic
+        - !Ref StarwarsSNS
       MetricName: ApproximateNumberOfMessagesVisible
       Namespace: "AWS/SQS"
       Statistic: Sum
