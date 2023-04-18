@@ -125,8 +125,8 @@ Resources:
   StarwarsSNS:
     Type: "AWS::SNS::Topic"
     Properties:
-      DisplayName: "Star Wars DLQ Notification"
-      TopicName: "starwars_dlq_notification"
+      DisplayName: "Star War DLQ Notification"
+      TopicName: "starwar_dlq_notification"
 
   SnsSubscription:
     Type: "AWS::SNS::Subscription"
