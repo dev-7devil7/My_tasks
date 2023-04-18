@@ -139,7 +139,6 @@ Resources:
     Type: "AWS::CloudWatch::Alarm"
     Properties:
       AlarmName: "StarWars Alarm"
-      AlarmDescription: "Alarm when a new message is added to the Star Wars DLQ"
       ActionsEnabled: true
       OKActions:
         - !Ref StarwarsTopic
